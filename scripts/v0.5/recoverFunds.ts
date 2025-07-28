@@ -12,13 +12,16 @@ const vaultClient = ConditionalVaultClient.createClient({ provider });
 const ammClient = AmmClient.createClient({ provider });
 
 const DAO_KEY = new PublicKey("9NCPLEFgiu4XZdp9wtWMc1mXyY26VGeWsoKHCAPP3bAo");
-const SQUADS_PROPOSAL_PDA = new PublicKey("CPXTJyYueptiLL5WAqXoC1SHnZvkq1hUAMw3qSv4bdxu");
+const SQUADS_PROPOSAL_PDA = new PublicKey("HDyg2gbibGfDf672KN9MU38Z5dnNVaSiTsVQw33WnY5Q");
 
 async function main() {
 
   const dao = await autocratClient.getDao(DAO_KEY);
 
   const [metaDaoProposal] = getProposalAddr(AUTOCRAT_PROGRAM_ID, SQUADS_PROPOSAL_PDA);
+
+  const proposal = await autocratClient.getProposal(metaDaoProposal);
+  console.log("proposal", proposal);
 
   const {
     baseVault, quoteVault, passAmm,
@@ -48,23 +51,31 @@ async function main() {
   const baseVaultUserTokenAccount = getAssociatedTokenAddressSync(passBaseMint, payer.publicKey);
   const quoteVaultUserTokenAccount = getAssociatedTokenAddressSync(passQuoteMint, payer.publicKey);
 
-  const baseTokensToMerge = await provider.connection.getTokenAccountBalance(baseVaultUserTokenAccount);
-  const quoteTokensToMerge = await provider.connection.getTokenAccountBalance(quoteVaultUserTokenAccount);
+  const baseTokens = await provider.connection.getTokenAccountBalance(baseVaultUserTokenAccount);
+  const quoteTokens = await provider.connection.getTokenAccountBalance(quoteVaultUserTokenAccount);
 
-  const baseTokensToMergeAmount = new BN(baseTokensToMerge.value.amount.toString());
-  const quoteTokensToMergeAmount = new BN(Number(quoteTokensToMerge.value.amount.toString()));
+  const baseTokenAmountBN = new BN(baseTokens.value.amount.toString());
+  const quoteTokenAmountBN = new BN(Number(quoteTokens.value.amount.toString()));
 
-  console.log("baseTokensToMerge", baseTokensToMerge.value.amount.toString());
-  console.log("quoteTokensToMerge", quoteTokensToMerge.value.amount.toString());
+  console.log("baseTokensToMerge", baseTokens.value.amount.toString());
+  console.log("quoteTokensToMerge", quoteTokens.value.amount.toString());
 
-  const mergeTokens = await vaultClient.mergeTokensIx(question, baseVault, dao.baseMint, baseTokensToMergeAmount, 2, payer.publicKey).rpc();
-  const mergeTokensQuote = await vaultClient.mergeTokensIx(question, quoteVault, dao.quoteMint, quoteTokensToMergeAmount, 2, payer.publicKey).rpc();
 
-  // const withdraw = await vaultClient.redeemTokensIx(question, baseVault, dao.baseMint, 2, payer.publicKey).rpc();
-  // const withdrawQuote = await vaultClient.redeemTokensIx(question, quoteVault, dao.quoteMint, 2, payer.publicKey).rpc();
+  if (proposal && (proposal.state.passed || proposal.state.failed)) {
+    console.log("Proposal passed or failed using redeem vs merge");
+    const withdraw = await vaultClient.redeemTokensIx(question, baseVault, dao.baseMint, 2, payer.publicKey).rpc();
+    const withdrawQuote = await vaultClient.redeemTokensIx(question, quoteVault, dao.quoteMint, 2, payer.publicKey).rpc();
 
-  console.log("withdraw", mergeTokens);
-  console.log("withdrawQuote", mergeTokensQuote);
+    console.log("withdraw", withdraw);
+    console.log("withdrawQuote", withdrawQuote);
+  } else {
+
+    const mergeTokens = await vaultClient.mergeTokensIx(question, baseVault, dao.baseMint, baseTokenAmountBN, 2, payer.publicKey).rpc();
+    const mergeTokensQuote = await vaultClient.mergeTokensIx(question, quoteVault, dao.quoteMint, quoteTokenAmountBN, 2, payer.publicKey).rpc();
+
+    console.log("mergeTokens", mergeTokens);
+    console.log("mergeTokensQuote", mergeTokensQuote);
+  }
   
 }
 

@@ -16,8 +16,9 @@ const vaultClient = ConditionalVaultClient.createClient({ provider });
 const ammClient = AmmClient.createClient({ provider });
 
 const DAO_KEY = new PublicKey("9NCPLEFgiu4XZdp9wtWMc1mXyY26VGeWsoKHCAPP3bAo");
-const SQUADS_PROPOSAL_PDA = new PublicKey("HDyg2gbibGfDf672KN9MU38Z5dnNVaSiTsVQw33WnY5Q"); // NOTE: This is NOT the transaction PDA (eg the URL in squads)
+const SQUADS_PROPOSAL_PDA = new PublicKey("8pdKvfqHpkyLJmbzRihcfdVFjRhBg6MvyBm3HKfCnVwF"); // NOTE: This is NOT the transaction PDA (eg the URL in squads)
 
+// TOOD: THIS NEEDS TO BE CLEANED UP BEFORE MERGE...
 async function main() {
 
   if (!process.env.JITO_AUTH_TOKEN) {
@@ -35,19 +36,29 @@ async function main() {
     provider.connection,
     multisigPda
   );
+
+  const proposal = await multisig.accounts.Proposal.fromAccountAddress(
+    provider.connection,
+    SQUADS_PROPOSAL_PDA
+  );
+
+  console.log("proposal", proposal);
   
   const currentTransactionIndex = Number(multisigAccountInfo.transactionIndex);
 
+  if (proposal.transactionIndex !== currentTransactionIndex) {
+    console.log("There are additional proposals in the queue, be aware");
+  }
+
   const [proposalKey, proposalBump] = multisig.getProposalPda({
     multisigPda,
-    transactionIndex: BigInt(currentTransactionIndex),
+    transactionIndex: BigInt(new BN(proposal.transactionIndex).toString()),
   });
 
   console.log("Squads proposal key", proposalKey.toBase58());
   console.log("Squads proposal bump", proposalBump);
 
   assert(proposalKey.equals(SQUADS_PROPOSAL_PDA), "Proposal PDA does not match");
-
 
   const minBaseLiquidity = dao.minBaseFutarchicLiquidity;
   let minQuoteLiquidity = dao.minQuoteFutarchicLiquidity;

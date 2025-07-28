@@ -27,9 +27,16 @@ create-proposal = "yarn run tsx scripts/createProposal.ts"
 create-v04-dao = "yarn run tsx scripts/createV04DAO.ts"
 assign-permissionless-account = "yarn run tsx scripts/assignPermissionlessAccount.ts"
 create-v04-proposal = "yarn run tsx scripts/createV04Proposal.ts"
+complete-launch = "yarn run tsx scripts/v0.5/launchComplete.ts"
 initialize-launch = "yarn run tsx scripts/initializeLaunch.ts"
 test = "npx mocha --import=tsx --bail tests/main.test.ts"
 transfer = "yarn run tsx scripts/createV05TransferProposal.ts"
+v05-create-proposal = "yarn run tsx scripts/v0.5/createProposal.ts"
+v05-recover = "yarn run tsx scripts/v0.5/recoverFunds.ts"
+v03-finalize-proposal = "yarn run tsx scripts/v0.3/finalizeProposal.ts"
+v05-execute-proposal = "yarn run tsx scripts/v0.5/executev05Proposal.ts"
+v05-redeem-launch = "yarn run tsx scripts/v0.5/redeemLaunch.ts"
+v05-use-spending-limit = "yarn run tsx scripts/v0.5/useSpendingLimit.ts"
 
 [test]
 startup_wait = 5000
